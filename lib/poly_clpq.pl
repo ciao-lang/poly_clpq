@@ -100,56 +100,56 @@ linexp(  N) :- ground(N).
    # "@var{Y} is the projection of @var{X} to variables @var{Vars}".
 
 project(Vars, X, Y) :-
-	to_clpq(X, Cxs),
-	project_(Vars, Cxs, Cys),
-	from_clpq(Cys, Y).
+    to_clpq(X, Cxs),
+    project_(Vars, Cxs, Cys),
+    from_clpq(Cys, Y).
 
 project_(Vars, Cxs, Cys) :-
-        copy_term(Vars-Cxs, CpyVars-CpyCxs),
-        clpq_meta(CpyCxs),
-        dump_ground(CpyVars, Vars, Vars2, Cys, Cys0),
-        dump_constraints(Vars2, YVars, Cys0),
-	Vars = YVars. % map back to the original vars
+    copy_term(Vars-Cxs, CpyVars-CpyCxs),
+    clpq_meta(CpyCxs),
+    dump_ground(CpyVars, Vars, Vars2, Cys, Cys0),
+    dump_constraints(Vars2, YVars, Cys0),
+    Vars = YVars. % map back to the original vars
 
 dump_ground([], [], [], Cs, Cs).
 dump_ground([CpyVar|CpyVars], [Var|Vars], [Var2|Vars2], Cs, Cs0) :-
-        ( ground(CpyVar) ->
-            Cs = [Var .=. CpyVar|Cs1]
-        ; Var2 = CpyVar, Cs = Cs1
-        ),
-        dump_ground(CpyVars, Vars, Vars2, Cs1, Cs0).
+    ( ground(CpyVar) ->
+        Cs = [Var .=. CpyVar|Cs1]
+    ; Var2 = CpyVar, Cs = Cs1
+    ),
+    dump_ground(CpyVars, Vars, Vars2, Cs1, Cs0).
 
 :- export(convhull/3).
 :- pred convhull(+X, +Y, -Z) :: polyhedron * polyhedron * polyhedron
    # "@var{Z} is the convex hull of @var{X} and @var{Y}".
 
 convhull(X, Y, Z) :-
-	to_clpq(X, Cxs),
-	to_clpq(Y, Cys),
-	convhull_(Cxs, Cys, Czs),
-	from_clpq(Czs, Z).
+    to_clpq(X, Cxs),
+    to_clpq(Y, Cys),
+    convhull_(Cxs, Cys, Czs),
+    from_clpq(Czs, Z).
 
 convhull_(Cxs, Cys, Czs) :-
-	% Get all variables
-	term_variables((Cxs,Cys), Vars),
-	% Do copies of Cxs and Cys
-	copy_term(Vars-Cxs, XVars-Cxs2),
-	copy_term(Vars-Cys, YVars-Cys2),
-	% All points between Cxs and Cys (with Sig1, Sig2 aux vars)
-        scale(Cxs2, Sig1, [], C1s),
-        scale(Cys2, Sig2, C1s, C2s),
-        add_vect(XVars, YVars, ZVars, C2s, C3s),
-        project_(ZVars, [Sig1 .>=. 0, Sig2 .>=. 0, Sig1+Sig2 .=. 1|C3s], Czs),
-	%
-	Vars = ZVars. % map back to the original vars
+    % Get all variables
+    term_variables((Cxs,Cys), Vars),
+    % Do copies of Cxs and Cys
+    copy_term(Vars-Cxs, XVars-Cxs2),
+    copy_term(Vars-Cys, YVars-Cys2),
+    % All points between Cxs and Cys (with Sig1, Sig2 aux vars)
+    scale(Cxs2, Sig1, [], C1s),
+    scale(Cys2, Sig2, C1s, C2s),
+    add_vect(XVars, YVars, ZVars, C2s, C3s),
+    project_(ZVars, [Sig1 .>=. 0, Sig2 .>=. 0, Sig1+Sig2 .=. 1|C3s], Czs),
+    %
+    Vars = ZVars. % map back to the original vars
 
 scale([], _, Cs, Cs).
 scale([C1|C1s], Sig, C2s, C3s) :-
-        C1 =.. [RelOp, A1, B1],
-        C2 =.. [RelOp, A2, B2],
-        mulexp(A1, Sig, A2),
-        mulexp(B1, Sig, B2),
-        scale(C1s, Sig, [C2|C2s], C3s).
+    C1 =.. [RelOp, A1, B1],
+    C2 =.. [RelOp, A2, B2],
+    mulexp(A1, Sig, A2),
+    mulexp(B1, Sig, B2),
+    scale(C1s, Sig, [C2|C2s], C3s).
 
 mulexp(  X,   _,     X) :- var(X), !.
 mulexp(N*X,   _,   N*X) :- ground(N), var(X), !.
@@ -160,7 +160,7 @@ mulexp(  N, Sig, N*Sig) :- ground(N).
 
 add_vect([], [], [], Cs, Cs).
 add_vect([U|Us], [V|Vs], [W|Ws], C1s, C2s) :-
-        add_vect(Us, Vs, Ws, [W .=. U+V|C1s], C2s).
+    add_vect(Us, Vs, Ws, [W .=. U+V|C1s], C2s).
 
 % ---------------------------------------------------------------------------
 % Standard widening (Cousot and Halbwachs)
@@ -180,27 +180,27 @@ add_vect([U|Us], [V|Vs], [W|Ws], C1s, C2s) :-
       computation)".
 
 widen(X, Y, Z) :-
-	to_clpq(X, Cxs),
-	to_clpq(Y, Cys),
-	widen_(Cxs, Cys, Czs),
-	from_clpq(Czs, Z).
+    to_clpq(X, Cxs),
+    to_clpq(Y, Cys),
+    widen_(Cxs, Cys, Czs),
+    from_clpq(Czs, Z).
 
 widen_(_,[],[]) :- !.
 widen_([],_,[]) :- !.
 widen_(Cxs,Cys,Czs) :-
-	% TODO: copy_term/2 is not needed (we could assert positions, undo, and filter)
-        copy_term((Cxs,Cys),(CopyCxs,CopyCys)),
-        clpq_meta(CopyCys),
-        filter_entailed(CopyCxs,Cxs,Czs).
+    % TODO: copy_term/2 is not needed (we could assert positions, undo, and filter)
+    copy_term((Cxs,Cys),(CopyCxs,CopyCys)),
+    clpq_meta(CopyCys),
+    filter_entailed(CopyCxs,Cxs,Czs).
 
 % Remove each constrain from OrigC that is not entailed by
 % the constrain store (we check entailment on C).
 filter_entailed([],[],[]).
 filter_entailed([C|Cs],[OrigC|OrigCs],[OrigC|Cs2]) :-
-        clpq_entailed([C]),!,
-        filter_entailed(Cs,OrigCs,Cs2).
+    clpq_entailed([C]),!,
+    filter_entailed(Cs,OrigCs,Cs2).
 filter_entailed([_|Cs],[_|OrigCs],Cs2) :-
-        filter_entailed(Cs,OrigCs,Cs2).
+    filter_entailed(Cs,OrigCs,Cs2).
 
 % ---------------------------------------------------------------------------
 
@@ -221,35 +221,35 @@ filter_entailed([_|Cs],[_|OrigCs],Cs2) :-
 :- pred contains(+X, +Y) :: polyhedron * polyhedron
    # "@var{X} contains @var{Y}".
 contains(X, Y) :-
-	to_clpq(Y, Cys),
-	to_clpq(X, Cxs),
-	\+ (clpq_meta(Cys), \+ clpq_entailed(Cxs)).
+    to_clpq(Y, Cys),
+    to_clpq(X, Cxs),
+    \+ (clpq_meta(Cys), \+ clpq_entailed(Cxs)).
 
 % ---------------------------------------------------------------------------
 
 :- export(is_empty/1).
 :- pred is_empty(+X) :: polyhedron # "@var{B} is empty".
 is_empty(X) :-
-	contains([fail], X).
-	% to_clpq(X, Cxs),
-	% \+ clpq_meta(Cxs).
+    contains([fail], X).
+    % to_clpq(X, Cxs),
+    % \+ clpq_meta(Cxs).
 
 :- export(is_universe/1).
 :- pred is_universe(+X) :: polyhedron # "@var{B} is a universe".
 is_universe(X) :-
-	contains(X, []).
-	% to_clpq(X, Cxs),
-	% \+ \+ clpq_entailed(Cxs).
+    contains(X, []).
+    % to_clpq(X, Cxs),
+    % \+ \+ clpq_entailed(Cxs).
 
 % ---------------------------------------------------------------------------
 % Transform between constrains and CLP(Q) constraints
 
 from_clpq([], []).
 from_clpq([X|Xs], [Y|Ys]) :-
-	( from_clpq_(X,Y) -> true
-	; throw(error(unknown_clpq(X), poly_clpq:from_clpq/2))
-	),
-	from_clpq(Xs,Ys).
+    ( from_clpq_(X,Y) -> true
+    ; throw(error(unknown_clpq(X), poly_clpq:from_clpq/2))
+    ),
+    from_clpq(Xs,Ys).
 
 from_clpq_(A.=.B, A=B).
 from_clpq_(A.>=.B, A>=B).
@@ -257,10 +257,10 @@ from_clpq_(A.=<.B, A=<B).
 
 to_clpq([], []).
 to_clpq([X|Xs], [Y|Ys]) :-
-	( to_clpq_(X, Y) -> true
-	; throw(error(cannot_map_to_clpq(X), poly_clpq:to_clpq/2))
-	),
-	to_clpq(Xs, Ys).
+    ( to_clpq_(X, Y) -> true
+    ; throw(error(cannot_map_to_clpq(X), poly_clpq:to_clpq/2))
+    ),
+    to_clpq(Xs, Ys).
 
 to_clpq_(fail, 0.=.1).
 to_clpq_(A=B, A.=.B).
