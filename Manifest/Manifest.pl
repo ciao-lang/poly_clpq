@@ -5,6 +5,6 @@ alias_paths([
   library = 'lib'
 ]).
 depends([
-  core-[version>='1.22']
+  core-[version>='1.23']
 ]).
 lib('lib').
